@@ -1,0 +1,108 @@
+[gd_scene load_steps=5 format=3 uid="uid://b1mmgame2026aa"]
+
+[ext_resource type="Script" path="res://scripts/game.gd" id="1_game"]
+[ext_resource type="Script" path="res://scripts/vista_laberinto.gd" id="2_vista"]
+[ext_resource type="Script" path="res://scripts/raton.gd" id="3_raton"]
+[ext_resource type="Script" path="res://scripts/hud.gd" id="4_hud"]
+
+[node name="Game" type="Node2D"]
+script = ExtResource("1_game")
+
+[node name="vista_dios" type="Node2D" parent="."]
+script = ExtResource("2_vista")
+
+[node name="vista_mapa_raton" type="Node2D" parent="."]
+position = Vector2(672, 0)
+script = ExtResource("2_vista")
+color_paredes = Color(0.55, 0.85, 1, 1)
+
+[node name="raton" type="Node2D" parent="."]
+script = ExtResource("3_raton")
+
+[node name="paso_timer" type="Timer" parent="."]
+wait_time = 0.12
+autostart = true
+
+[node name="ui" type="CanvasLayer" parent="."]
+
+[node name="titulo_dios" type="Label" parent="ui"]
+offset_left = 28.0
+offset_top = 10.0
+offset_right = 636.0
+offset_bottom = 36.0
+text = "MICROMOUSE — laberinto real (vista de dios)"
+
+[node name="titulo_mapa" type="Label" parent="ui"]
+offset_left = 672.0
+offset_top = 10.0
+offset_right = 1124.0
+offset_bottom = 36.0
+text = "mapa del ratón (M2) — vacío hasta que lo conectes"
+
+[node name="hud" type="PanelContainer" parent="ui"]
+offset_left = 672.0
+offset_top = 452.0
+offset_right = 1124.0
+offset_bottom = 692.0
+script = ExtResource("4_hud")
+
+[node name="margen" type="MarginContainer" parent="ui/hud"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 10
+
+[node name="columna" type="VBoxContainer" parent="ui/hud/margen"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="titulo_label" type="Label" parent="ui/hud/margen/columna"]
+layout_mode = 2
+text = "TELEMETRÍA"
+
+[node name="fase_label" type="Label" parent="ui/hud/margen/columna"]
+layout_mode = 2
+text = "fase: —"
+
+[node name="pasos_label" type="Label" parent="ui/hud/margen/columna"]
+layout_mode = 2
+text = "pasos: 0"
+
+[node name="visitadas_label" type="Label" parent="ui/hud/margen/columna"]
+layout_mode = 2
+text = "visitadas: 0"
+
+[node name="tiempo_label" type="Label" parent="ui/hud/margen/columna"]
+layout_mode = 2
+text = "tiempo: 0.0 s"
+
+[node name="record_label" type="Label" parent="ui/hud/margen/columna"]
+layout_mode = 2
+text = "récord: —"
+
+[node name="botones" type="HBoxContainer" parent="ui/hud/margen/columna"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="boton_pausa" type="Button" parent="ui/hud/margen/columna/botones"]
+layout_mode = 2
+text = "Pausa"
+
+[node name="boton_paso" type="Button" parent="ui/hud/margen/columna/botones"]
+layout_mode = 2
+text = "Paso"
+
+[node name="boton_velocidad" type="Button" parent="ui/hud/margen/columna/botones"]
+layout_mode = 2
+text = "Vel x1"
+
+[node name="boton_reiniciar" type="Button" parent="ui/hud/margen/columna/botones"]
+layout_mode = 2
+text = "Reiniciar"
+
+[connection signal="timeout" from="paso_timer" to="." method="_on_paso_timer_timeout"]
+[connection signal="pressed" from="ui/hud/margen/columna/botones/boton_pausa" to="." method="_on_boton_pausa_pressed"]
+[connection signal="pressed" from="ui/hud/margen/columna/botones/boton_paso" to="." method="_on_boton_paso_pressed"]
+[connection signal="pressed" from="ui/hud/margen/columna/botones/boton_velocidad" to="." method="_on_boton_velocidad_pressed"]
+[connection signal="pressed" from="ui/hud/margen/columna/botones/boton_reiniciar" to="." method="_on_boton_reiniciar_pressed"]
