@@ -65,6 +65,11 @@ func _ready() -> void:
 	# TODO (PARCIAL · M2): configura vista_mapa_raton con el laberinto que TU
 	# cerebro descubre (Laberinto.vacio + poner_pared al sensar) y redibuja
 	# cada vez que aprenda una pared. Distingue visitadas / no visitadas.
+	vista_mapa_raton.configurar(
+	cerebro.mapa_descubierto,
+	ORIGEN,
+	tam_celda
+)
 
 
 func _on_paso_timer_timeout() -> void:
@@ -76,11 +81,15 @@ func _on_paso_timer_timeout() -> void:
 	pasos_cambiados.emit(raton.pasos)
 
 	if cerebro is CerebroEstudiante:
-		var visitadas_cantidad: int = cerebro.visitadas.size()
-		visitadas_cambiadas.emit(visitadas_cantidad)
+		vista_mapa_raton.configurar(
+		cerebro.mapa_descubierto,
+		ORIGEN,
+		tam_celda
+	)
 
 	if laberinto.es_meta(raton.celda):
 		_meta_alcanzada()
+	
 
 
 func _meta_alcanzada() -> void:
