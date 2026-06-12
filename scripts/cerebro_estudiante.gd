@@ -90,12 +90,20 @@ func paso(raton: Raton) -> void:
 	# Mientras no implementes nada, el ratón se queda quieto.
 	if finalizo:
 		return
-	_anotar_paredes(raton)
-	if ruta_exploracion.is_empty():
-		ruta_exploracion.append(raton.celda)
-	var distancias = _flood_fill(metas, false)
-	var rumbo = _mejor_vecina(raton.celda, distancias, false)
-	_ejecutar_hacia(raton, rumbo, true)
+	if fase == Fase.EXPLORANDO:
+		_anotar_paredes(raton)
+		if ruta_exploracion.is_empty():
+			ruta_exploracion.append(raton.celda)
+		if _es_meta(raton.celda):
+			pasos_exploracion = max(0, ruta_exploracion.size() - 1)
+			ruta_regreso = _construir_ruta(raton.celda, [inicio], true)
+			if ruta_regreso.is_empty():
+				ruta_regreso = _ruta_reversa_exploracion()
+			fase = Fase.VOLVIENDO
+			return
+		var distancias = _flood_fill(metas, false)
+		var rumbo = _mejor_vecina(raton.celda, distancias, false)
+		_ejecutar_hacia(raton, rumbo, true)
 
 # TODO (PARCIAL · M1): funciones sugeridas.
 # func _anotar_paredes(raton: Raton) -> void:
@@ -222,3 +230,23 @@ func _ejecutar_hacia(raton: Raton, dir: int, contar_exploracion: bool) -> void:
 		raton.girar_derecha()
 	else:
 		raton.girar_derecha()
+
+func _es_meta(celda: Vector2i) -> bool:
+	return celda in metas
+
+
+func _direccion_hacia(a: Vector2i, b: Vector2i) -> int:
+	var delta: Vector2i = b - a
+	for dir in range(4):
+		if Laberinto.DELTAS[dir] == delta:
+			return dir
+	return -1
+
+func _construir_ruta(desde: Vector2i, hasta: Array, solo_conocidas: bool) -> Array[Vector2i]:
+	return []
+
+
+func _ruta_reversa_exploracion() -> Array[Vector2i]:
+	var r: Array[Vector2i] = _copiar_vector2i(ruta_exploracion)
+	r.reverse()
+	return r
