@@ -104,6 +104,23 @@ func paso(raton: Raton) -> void:
 		var distancias = _flood_fill(metas, false)
 		var rumbo = _mejor_vecina(raton.celda, distancias, false)
 		_ejecutar_hacia(raton, rumbo, true)
+	elif fase == Fase.VOLVIENDO:
+		_anotar_paredes(raton)
+		if raton.celda == inicio:
+			ruta_speed = _construir_ruta(inicio, metas, true)
+			if ruta_speed.is_empty():
+				ruta_speed = _copiar_vector2i(ruta_exploracion)
+			_speed_inicio_pasos = raton.pasos
+			fase = Fase.SPEED_RUN
+			return
+		_seguir_ruta(raton, ruta_regreso, false)
+	elif fase == Fase.SPEED_RUN:
+		if _es_meta(raton.celda):
+			pasos_speed = raton.pasos - _speed_inicio_pasos
+			fase = Fase.FIN
+			finalizo = true
+			return
+		_seguir_ruta(raton, ruta_speed, false)
 
 # TODO (PARCIAL · M1): funciones sugeridas.
 # func _anotar_paredes(raton: Raton) -> void:
@@ -243,10 +260,41 @@ func _direccion_hacia(a: Vector2i, b: Vector2i) -> int:
 	return -1
 
 func _construir_ruta(desde: Vector2i, hasta: Array, solo_conocidas: bool) -> Array[Vector2i]:
-	return []
+	var dist: Dictionary = _flood_fill(hasta, solo_conocidas)
+	if not dist.has(desde):
+		return []
+	var ruta: Array[Vector2i] = []
+	ruta.append(desde)
+	var actual: Vector2i = desde
+	var guardia: int = ancho * alto * 4
+	while not (actual in hasta) and guardia > 0:
+		guardia -= 1
+		var mejor_dir: int = _mejor_vecina(actual, dist, solo_conocidas)
+		var siguiente: Vector2i = actual + Laberinto.DELTAS[mejor_dir]
+		if not dist.has(siguiente) or int(dist[siguiente]) >= int(dist[actual]):
+			break
+		ruta.append(siguiente)
+		actual = siguiente
+	return ruta
 
 
 func _ruta_reversa_exploracion() -> Array[Vector2i]:
 	var r: Array[Vector2i] = _copiar_vector2i(ruta_exploracion)
 	r.reverse()
 	return r
+
+func _seguir_ruta(raton: Raton, ruta: Array[Vector2i], contar: bool) -> void:
+	if ruta.size() < 2:
+		return
+	var i: int = ruta.find(raton.celda)
+	if i == -1:
+		var dist: Dictionary = _flood_fill([ruta[ruta.size() - 1]], true)
+		var dir: int = _mejor_vecina(raton.celda, dist, true)
+		_ejecutar_hacia(raton, dir, contar)
+		return
+	if i >= ruta.size() - 1:
+		return
+	var siguiente: Vector2i = ruta[i + 1]
+	var dir_objetivo: int = _direccion_hacia(raton.celda, siguiente)
+	if dir_objetivo != -1:
+		_ejecutar_hacia(raton, dir_objetivo, contar)
