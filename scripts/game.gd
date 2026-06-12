@@ -70,8 +70,15 @@ func _ready() -> void:
 func _on_paso_timer_timeout() -> void:
 	if raton.ocupado():
 		return
+
 	cerebro.paso(raton)
-	# TODO (PARCIAL · B1): actualiza pasos / visitadas / cronómetro en el HUD.
+
+	pasos_cambiados.emit(raton.pasos)
+
+	if cerebro is CerebroEstudiante:
+		var visitadas_cantidad: int = cerebro.visitadas.size()
+		visitadas_cambiadas.emit(visitadas_cantidad)
+
 	if laberinto.es_meta(raton.celda):
 		_meta_alcanzada()
 
