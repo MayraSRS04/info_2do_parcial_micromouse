@@ -10,7 +10,7 @@ extends Node2D
 # competencia: el wall-follower NO basta).
 @export_file("*.maz") var archivo_laberinto: String = "res://mazes/01_entrenamiento.maz"
 # Marca esta casilla (en el Inspector del nodo Game) para usar tu cerebro.
-@export var usar_cerebro_estudiante: bool = false
+@export var usar_cerebro_estudiante: bool = true
 
 const ORIGEN := Vector2(28, 44)
 # La vista de dios dispone de ~608 px; la celda se adapta al tamaño del

@@ -41,10 +41,24 @@ extends RefCounted
 # tamaño del laberinto, las metas y la celda de inicio son datos "del
 # concurso" (se conocen de antemano): game.gd te los entrega en preparar().
 # Las PAREDES no.
+enum Fase { EXPLORANDO, VOLVIENDO, SPEED_RUN, FIN }
+
 var ancho: int = 0
 var alto: int = 0
 var metas: Array[Vector2i] = []
 var inicio: Vector2i = Vector2i.ZERO
+var fase: int = Fase.EXPLORANDO
+var mapa_descubierto: Laberinto = null
+var visitadas: Dictionary = {}
+var visitas: Dictionary = {}
+var abiertas: Dictionary = {}
+var ruta_exploracion: Array[Vector2i] = []
+var ruta_regreso: Array[Vector2i] = []
+var ruta_speed: Array[Vector2i] = []
+var pasos_exploracion: int = 0
+var pasos_speed: int = 0
+var finalizo: bool = false
+var _speed_inicio_pasos: int = 0
 
 
 func preparar(ancho_: int, alto_: int, metas_: Array[Vector2i],
@@ -54,6 +68,19 @@ func preparar(ancho_: int, alto_: int, metas_: Array[Vector2i],
 	metas = metas_
 	inicio = inicio_
 	# TODO (PARCIAL · M1): inicializa tu mapa descubierto y tu estado aquí.
+	mapa_descubierto = Laberinto.vacio(ancho, alto)
+	mapa_descubierto.inicio = inicio
+	mapa_descubierto.metas = _copiar_vector2i(metas)
+	visitadas.clear()
+	visitas.clear()
+	abiertas.clear()
+	ruta_exploracion.clear()
+	ruta_regreso.clear()
+	ruta_speed.clear()
+	pasos_exploracion = 0
+	pasos_speed = 0
+	finalizo = false
+	fase = Fase.EXPLORANDO
 
 
 func paso(raton: Raton) -> void:
@@ -63,12 +90,20 @@ func paso(raton: Raton) -> void:
 	# Mientras no implementes nada, el ratón se queda quieto.
 	pass
 
-
 # TODO (PARCIAL · M1): funciones sugeridas.
 # func _anotar_paredes(raton: Raton) -> void:
 # func _flood_fill(hasta: Array[Vector2i], solo_conocidas: bool) -> Array:
 # func _mejor_vecina(desde: Vector2i, distancias: Array) -> int:  # rumbo
 
+
+
 # TODO (PARCIAL · M3): cuando termines de explorar y estés en el inicio,
 # calcula la ruta del speed run y guárdala para que game.gd la dibuje.
 # func ruta_speed_run() -> Array[Vector2i]:
+	
+
+func _copiar_vector2i(origen_array: Array) -> Array[Vector2i]:
+	var copia: Array[Vector2i] = []
+	for celda in origen_array:
+		copia.append(celda)
+	return copia
