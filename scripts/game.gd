@@ -34,6 +34,7 @@ enum Fase {
 
 var fase_actual: String = "EXPLORANDO"
 var tiempo_corrida: float = 0.0
+var pausado: bool = false
 
 @onready var vista_dios: VistaLaberinto = $vista_dios
 @onready var vista_mapa_raton: VistaLaberinto = $vista_mapa_raton
@@ -116,7 +117,11 @@ func _meta_alcanzada() -> void:
 func _on_boton_pausa_pressed() -> void:
 	# TODO (PARCIAL · B2): pausa/reanuda la corrida (paso_timer) y refleja el
 	# estado en el texto del botón.
-	pass
+	pausado = !pausado
+	if pausado:
+		paso_timer.stop()
+	else:
+		paso_timer.start()
 
 
 func _on_boton_paso_pressed() -> void:
