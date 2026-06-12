@@ -112,30 +112,28 @@ func _anotar_paredes(raton: Raton) -> void:
 func _flood_fill(hasta: Array, solo_conocidas: bool) -> Dictionary:
 	var distancias: Dictionary = {}
 	var cola: Array[Vector2i] = []
-
 	for objetivo in hasta:
-		if mapa_descubierto.en_rango(objetivo):
+		if mapa_descubierto.en_rango(objetivo) and (not solo_conocidas or visitadas.has(objetivo)):
 			distancias[objetivo] = 0
 			cola.append(objetivo)
-
 	var indice: int = 0
 	while indice < cola.size():
 		var celda: Vector2i = cola[indice]
 		indice += 1
-
 		for dir in range(4):
 			var vecina: Vector2i = celda + Laberinto.DELTAS[dir]
-
 			if not mapa_descubierto.en_rango(vecina):
 				continue
-
 			if mapa_descubierto.tiene_pared(celda, dir):
 				continue
-
+			if solo_conocidas:
+				if not visitadas.has(vecina):
+					continue
+				if not _arista_abierta(celda, dir):
+					continue
 			if not distancias.has(vecina):
 				distancias[vecina] = int(distancias[celda]) + 1
 				cola.append(vecina)
-
 	return distancias
 
 # func _mejor_vecina(desde: Vector2i, distancias: Array) -> int:  # rumbo
