@@ -20,6 +20,21 @@ var tam_celda := 38.0
 var laberinto: Laberinto
 var cerebro = null
 
+signal pasos_cambiados(pasos: int)
+signal visitadas_cambiadas(cantidad: int)
+signal fase_cambiada(nombre: String)
+signal corrida_terminada(exito: bool, pasos: int)
+
+enum Fase {
+	EXPLORANDO,
+	VOLVIENDO,
+	SPEED_RUN,
+	FIN
+}
+
+var fase_actual: String = "EXPLORANDO"
+var tiempo_corrida: float = 0.0
+
 @onready var vista_dios: VistaLaberinto = $vista_dios
 @onready var vista_mapa_raton: VistaLaberinto = $vista_mapa_raton
 @onready var raton: Raton = $raton
