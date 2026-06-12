@@ -81,11 +81,15 @@ func _on_paso_timer_timeout() -> void:
 	pasos_cambiados.emit(raton.pasos)
 
 	if cerebro is CerebroEstudiante:
+		var visitadas_cantidad: int = cerebro.visitadas.size()
+
+		visitadas_cambiadas.emit(visitadas_cantidad)
+
 		vista_mapa_raton.configurar(
-		cerebro.mapa_descubierto,
-		ORIGEN,
-		tam_celda
-	)
+			cerebro.mapa_descubierto,
+			ORIGEN,
+			tam_celda
+		)
 
 	if laberinto.es_meta(raton.celda):
 		_meta_alcanzada()
