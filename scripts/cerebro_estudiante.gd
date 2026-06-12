@@ -202,7 +202,8 @@ func _mejor_vecina(desde: Vector2i, distancias: Dictionary, solo_conocidas: bool
 # TODO (PARCIAL · M3): cuando termines de explorar y estés en el inicio,
 # calcula la ruta del speed run y guárdala para que game.gd la dibuje.
 # func ruta_speed_run() -> Array[Vector2i]:
-	
+func ruta_speed_run() -> Array[Vector2i]:
+	return ruta_speed
 
 func _marcar_visitada(celda: Vector2i) -> void:
 	visitadas[celda] = true
