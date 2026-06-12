@@ -35,6 +35,8 @@ enum Fase {
 var fase_actual: String = "EXPLORANDO"
 var tiempo_corrida: float = 0.0
 var pausado: bool = false
+var indice_velocidad: int = 0
+var velocidades: Array[float] = [1.0, 0.5, 0.25]
 
 @onready var vista_dios: VistaLaberinto = $vista_dios
 @onready var vista_mapa_raton: VistaLaberinto = $vista_mapa_raton
@@ -56,12 +58,16 @@ func _ready() -> void:
 	tam_celda = minf(56.0, 608.0 / maxf(laberinto.ancho, laberinto.alto))
 	vista_dios.configurar(laberinto, ORIGEN, tam_celda)
 	raton.configurar(laberinto, ORIGEN, tam_celda)
-	if usar_cerebro_estudiante:
-		cerebro = CerebroEstudiante.new()
-		cerebro.preparar(laberinto.ancho, laberinto.alto, laberinto.metas,
-				laberinto.inicio)
-	else:
-		cerebro = CerebroWallFollower.new()
+	if cerebro is CerebroEstudiante:
+		var visitadas_cantidad: int = cerebro.visitadas.size()
+
+		visitadas_cambiadas.emit(visitadas_cantidad)
+
+		vista_mapa_raton.configurar(
+			cerebro.mapa_descubierto,
+			ORIGEN,
+			tam_celda
+		)
 	# La vista derecha ("mapa del ratón") queda vacía hasta que la conectes:
 	# TODO (PARCIAL · M2): configura vista_mapa_raton con el laberinto que TU
 	# cerebro descubre (Laberinto.vacio + poner_pared al sensar) y redibuja
@@ -127,16 +133,19 @@ func _on_boton_pausa_pressed() -> void:
 func _on_boton_paso_pressed() -> void:
 	# TODO (PARCIAL · B2): con la corrida pausada, ejecuta UN solo paso del
 	# cerebro (depuración paso a paso).
-	pass
+	if not pausado:
+		return
+	_on_paso_timer_timeout()
 
 
 func _on_boton_velocidad_pressed() -> void:
 	# TODO (PARCIAL · B2): cicla la velocidad (p. ej. x1 → x2 → x4 cambiando
 	# paso_timer.wait_time y raton.duracion_paso).
-	pass
+	indice_velocidad = (indice_velocidad + 1) % velocidades.size()
+	paso_timer.wait_time = velocidades[indice_velocidad]
 
 
 func _on_boton_reiniciar_pressed() -> void:
 	# TODO (PARCIAL · B2): reinicia la corrida completa: ratón al inicio,
 	# cerebro nuevo, contadores a cero, timer corriendo.
-	pass
+	get_tree().reload_current_scene()
