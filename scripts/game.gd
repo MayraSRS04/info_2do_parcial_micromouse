@@ -55,14 +55,37 @@ var velocidades: Array[float] = [1.0, 0.5, 0.25]
 
 func _ready() -> void:
 	laberinto = Laberinto.desde_archivo(archivo_laberinto)
-	tam_celda = minf(56.0, 608.0 / maxf(laberinto.ancho, laberinto.alto))
-	vista_dios.configurar(laberinto, ORIGEN, tam_celda)
-	raton.configurar(laberinto, ORIGEN, tam_celda)
+
+	tam_celda = minf(
+		56.0,
+		608.0 / maxf(laberinto.ancho, laberinto.alto)
+	)
+
+	vista_dios.configurar(
+		laberinto,
+		ORIGEN,
+		tam_celda
+	)
+
+	raton.configurar(
+		laberinto,
+		ORIGEN,
+		tam_celda
+	)
+
+	if usar_cerebro_estudiante:
+		cerebro = CerebroEstudiante.new()
+
+		cerebro.preparar(
+			laberinto.ancho,
+			laberinto.alto,
+			laberinto.metas,
+			laberinto.inicio
+		)
+	else:
+		cerebro = CerebroWallFollower.new()
+
 	if cerebro is CerebroEstudiante:
-		var visitadas_cantidad: int = cerebro.visitadas.size()
-
-		visitadas_cambiadas.emit(visitadas_cantidad)
-
 		vista_mapa_raton.configurar(
 			cerebro.mapa_descubierto,
 			ORIGEN,
@@ -72,11 +95,6 @@ func _ready() -> void:
 	# TODO (PARCIAL · M2): configura vista_mapa_raton con el laberinto que TU
 	# cerebro descubre (Laberinto.vacio + poner_pared al sensar) y redibuja
 	# cada vez que aprenda una pared. Distingue visitadas / no visitadas.
-	vista_mapa_raton.configurar(
-	cerebro.mapa_descubierto,
-	ORIGEN,
-	tam_celda
-)
 
 
 func _on_paso_timer_timeout() -> void:
