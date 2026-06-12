@@ -109,6 +109,35 @@ func _anotar_paredes(raton: Raton) -> void:
 		else:
 			_poner_abierta(raton.celda, dir)
 # func _flood_fill(hasta: Array[Vector2i], solo_conocidas: bool) -> Array:
+func _flood_fill(hasta: Array, solo_conocidas: bool) -> Dictionary:
+	var distancias: Dictionary = {}
+	var cola: Array[Vector2i] = []
+
+	for objetivo in hasta:
+		if mapa_descubierto.en_rango(objetivo):
+			distancias[objetivo] = 0
+			cola.append(objetivo)
+
+	var indice: int = 0
+	while indice < cola.size():
+		var celda: Vector2i = cola[indice]
+		indice += 1
+
+		for dir in range(4):
+			var vecina: Vector2i = celda + Laberinto.DELTAS[dir]
+
+			if not mapa_descubierto.en_rango(vecina):
+				continue
+
+			if mapa_descubierto.tiene_pared(celda, dir):
+				continue
+
+			if not distancias.has(vecina):
+				distancias[vecina] = int(distancias[celda]) + 1
+				cola.append(vecina)
+
+	return distancias
+
 # func _mejor_vecina(desde: Vector2i, distancias: Array) -> int:  # rumbo
 
 
@@ -139,3 +168,6 @@ func _copiar_vector2i(origen_array: Array) -> Array[Vector2i]:
 	for celda in origen_array:
 		copia.append(celda)
 	return copia
+
+func _arista_abierta(celda: Vector2i, dir: int) -> bool:
+	return abiertas.has(_clave_arista(celda, dir))
