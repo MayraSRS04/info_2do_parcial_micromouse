@@ -91,6 +91,11 @@ func paso(raton: Raton) -> void:
 	if finalizo:
 		return
 	_anotar_paredes(raton)
+	if ruta_exploracion.is_empty():
+		ruta_exploracion.append(raton.celda)
+	var distancias = _flood_fill(metas, false)
+	var rumbo = _mejor_vecina(raton.celda, distancias, false)
+	_ejecutar_hacia(raton, rumbo, true)
 
 # TODO (PARCIAL · M1): funciones sugeridas.
 # func _anotar_paredes(raton: Raton) -> void:
@@ -137,7 +142,36 @@ func _flood_fill(hasta: Array, solo_conocidas: bool) -> Dictionary:
 	return distancias
 
 # func _mejor_vecina(desde: Vector2i, distancias: Array) -> int:  # rumbo
-
+func _mejor_vecina(desde: Vector2i, distancias: Dictionary, solo_conocidas: bool) -> int:
+	var mejor_dir: int = -1
+	var mejor_valor: int = 999999
+	var mejor_visitada: bool = true
+	var mejor_calor: int = 999999
+	for dir in range(4):
+		var vecina: Vector2i = desde + Laberinto.DELTAS[dir]
+		if not mapa_descubierto.en_rango(vecina):
+			continue
+		if mapa_descubierto.tiene_pared(desde, dir):
+			continue
+		if solo_conocidas and (not visitadas.has(vecina) or not _arista_abierta(desde, dir)):
+			continue
+		if not distancias.has(vecina):
+			continue
+		var valor: int = int(distancias[vecina])
+		var ya_visitada: bool = visitadas.has(vecina)
+		var calor: int = int(visitas.get(vecina, 0))
+		if valor < mejor_valor or (valor == mejor_valor and mejor_visitada and not ya_visitada) or (valor == mejor_valor and ya_visitada == mejor_visitada and calor < mejor_calor):
+			mejor_dir = dir
+			mejor_valor = valor
+			mejor_visitada = ya_visitada
+			mejor_calor = calor
+	if mejor_dir == -1:
+		for dir in range(4):
+			var vecina: Vector2i = desde + Laberinto.DELTAS[dir]
+			if mapa_descubierto.en_rango(vecina) and not mapa_descubierto.tiene_pared(desde, dir):
+				return dir
+		return Laberinto.NORTE
+	return mejor_dir
 
 
 # TODO (PARCIAL · M3): cuando termines de explorar y estés en el inicio,
@@ -169,3 +203,22 @@ func _copiar_vector2i(origen_array: Array) -> Array[Vector2i]:
 
 func _arista_abierta(celda: Vector2i, dir: int) -> bool:
 	return abiertas.has(_clave_arista(celda, dir))
+
+func _ejecutar_hacia(raton: Raton, dir: int, contar_exploracion: bool) -> void:
+	if dir == raton.rumbo:
+		var antes: Vector2i = raton.celda
+		if raton.avanzar():
+			_poner_abierta(antes, dir)
+			if contar_exploracion:
+				ruta_exploracion.append(raton.celda)
+		else:
+			mapa_descubierto.poner_pared(antes, dir)
+		return
+	var izquierda: int = (raton.rumbo + 3) % 4
+	var derecha: int = (raton.rumbo + 1) % 4
+	if dir == izquierda:
+		raton.girar_izquierda()
+	elif dir == derecha:
+		raton.girar_derecha()
+	else:
+		raton.girar_derecha()
