@@ -88,10 +88,26 @@ func paso(raton: Raton) -> void:
 	# tu mapa; 2) recalcula el flood-fill; 3) ejecuta UNA acción hacia la
 	# vecina con menor distancia.
 	# Mientras no implementes nada, el ratón se queda quieto.
-	pass
+	if finalizo:
+		return
+	_anotar_paredes(raton)
 
 # TODO (PARCIAL · M1): funciones sugeridas.
 # func _anotar_paredes(raton: Raton) -> void:
+func _anotar_paredes(raton: Raton) -> void:
+	_marcar_visitada(raton.celda)
+	var sensores = [
+		[raton.rumbo, raton.pared_frente()],
+		[(raton.rumbo + 3) % 4, raton.pared_izquierda()],
+		[(raton.rumbo + 1) % 4, raton.pared_derecha()],
+	]
+	for dato in sensores:
+		var dir: int = dato[0]
+		var hay_pared: bool = dato[1]
+		if hay_pared:
+			mapa_descubierto.poner_pared(raton.celda, dir)
+		else:
+			_poner_abierta(raton.celda, dir)
 # func _flood_fill(hasta: Array[Vector2i], solo_conocidas: bool) -> Array:
 # func _mejor_vecina(desde: Vector2i, distancias: Array) -> int:  # rumbo
 
@@ -101,6 +117,22 @@ func paso(raton: Raton) -> void:
 # calcula la ruta del speed run y guárdala para que game.gd la dibuje.
 # func ruta_speed_run() -> Array[Vector2i]:
 	
+
+func _marcar_visitada(celda: Vector2i) -> void:
+	visitadas[celda] = true
+	visitas[celda] = int(visitas.get(celda, 0)) + 1
+
+
+func _poner_abierta(celda: Vector2i, dir: int) -> void:
+	var vecina: Vector2i = celda + Laberinto.DELTAS[dir]
+	if not mapa_descubierto.en_rango(vecina):
+		return
+	abiertas[_clave_arista(celda, dir)] = true
+	abiertas[_clave_arista(vecina, (dir + 2) % 4)] = true
+
+
+func _clave_arista(celda: Vector2i, dir: int) -> String:
+	return str(celda.x) + "," + str(celda.y) + ":" + str(dir)
 
 func _copiar_vector2i(origen_array: Array) -> Array[Vector2i]:
 	var copia: Array[Vector2i] = []
