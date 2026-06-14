@@ -32,13 +32,16 @@ var fase_actual: int = -1
 var tiempo_corrida: float = 0.0
 var pausado: bool = false
 var indice_velocidad: int = 0
-var velocidades: Array[float] = [1.0, 0.5, 0.25]
-var corrida_en_curso : bool = true
+const MULTIPLICADORES_VELOCIDAD: Array[float] = [1.0, 2.0, 4.0]
+var espera_base: float = 0.12
+var duracion_paso_base: float = 0.10
+var corrida_en_curso: bool = true
 
 @onready var vista_dios: VistaLaberinto = $vista_dios
 @onready var vista_mapa_raton: VistaLaberinto = $vista_mapa_raton
 @onready var raton: Raton = $raton
 @onready var paso_timer: Timer = $paso_timer
+@onready var boton_velocidad: Button = $ui/hud/margen/columna/botones/boton_velocidad
 
 # SONIDO
 var sonido_paso: AudioStreamPlayer
@@ -56,16 +59,22 @@ var sonido_meta: AudioStreamPlayer
 
 
 func _ready() -> void:
+	espera_base = paso_timer.wait_time
+	duracion_paso_base = raton.duracion_paso
 	if laberinto_seleccionado == "":
 		laberinto_seleccionado = archivo_laberinto
 	archivo_laberinto = laberinto_seleccionado
 
 	laberinto = Laberinto.desde_archivo(archivo_laberinto)
+	var ancho_viewport: float = get_viewport_rect().size.x
+	var espacio_por_vista: float = (ancho_viewport - ORIGEN.x * 3) / 2.0
 
 	tam_celda = minf(
-		56.0,
-		608.0 / maxf(laberinto.ancho, laberinto.alto)
+		56.0, 
+		espacio_por_vista / maxf(laberinto.ancho, laberinto.alto)
 	)
+	
+	vista_mapa_raton.position.x = ORIGEN.x + laberinto.ancho * tam_celda + ORIGEN.x
 
 	vista_dios.configurar(
 		laberinto,
@@ -216,8 +225,11 @@ func _on_boton_paso_pressed() -> void:
 func _on_boton_velocidad_pressed() -> void:
 	# TODO (PARCIAL · B2): cicla la velocidad (p. ej. x1 → x2 → x4 cambiando
 	# paso_timer.wait_time y raton.duracion_paso).
-	indice_velocidad = (indice_velocidad + 1) % velocidades.size()
-	paso_timer.wait_time = velocidades[indice_velocidad]
+	indice_velocidad = (indice_velocidad + 1) % MULTIPLICADORES_VELOCIDAD.size()
+	var multiplicador: float = MULTIPLICADORES_VELOCIDAD[indice_velocidad]
+	paso_timer.wait_time = espera_base / multiplicador
+	raton.duracion_paso = duracion_paso_base / multiplicador
+	boton_velocidad.text = "Vel x%d" % int(multiplicador)
 
 
 func _on_boton_reiniciar_pressed() -> void:
@@ -267,17 +279,17 @@ func cambiar_laberinto(ruta: String) -> void:
 
 
 func _calcular_optimo_real() -> Dictionary:
-	var distancias: Dictionary = {}
-	var anillos: Array = []
-	var cola: Array[Vector2i] = []
+	var distancias: Dictionary = {laberinto.inicio: 0}
+	var anillos: Array = [[laberinto.inicio]]
+	var cola: Array[Vector2i] = [laberinto.inicio]
 
-	for meta in laberinto.metas:
-		distancias[meta] = 0
-		cola.append(meta)
-	anillos.append(cola.duplicate())
+	var meta_encontrada: Vector2i = laberinto.inicio
+	var distancia_meta: int = -1
+	if laberinto.es_meta(laberinto.inicio):
+		distancia_meta = 0
 
 	var indice := 0
-	while indice < cola.size():
+	while indice < cola.size() and distancia_meta == -1:
 		var tope := cola.size()
 		var siguiente_anillo: Array[Vector2i] = []
 		while indice < tope:
@@ -292,12 +304,15 @@ func _calcular_optimo_real() -> Dictionary:
 				distancias[vecina] = int(distancias[celda]) + 1
 				siguiente_anillo.append(vecina)
 				cola.append(vecina)
+				if laberinto.es_meta(vecina) and distancia_meta == -1:
+					meta_encontrada = vecina
+					distancia_meta = int(distancias[vecina])
 		if not siguiente_anillo.is_empty():
 			anillos.append(siguiente_anillo)
 
-	var ruta: Array[Vector2i] = [laberinto.inicio]
-	var actual: Vector2i = laberinto.inicio
-	while not laberinto.es_meta(actual):
+	var ruta: Array[Vector2i] = [meta_encontrada]
+	var actual: Vector2i = meta_encontrada
+	while actual != laberinto.inicio:
 		var mejor: Vector2i = actual
 		var mejor_dist: int = int(distancias.get(actual, 999999))
 		for dir in range(4):
@@ -311,11 +326,12 @@ func _calcular_optimo_real() -> Dictionary:
 			break
 		ruta.append(mejor)
 		actual = mejor
+	ruta.reverse()
 
 	return {
 		"anillos": anillos,
 		"ruta": ruta,
-		"pasos": int(distancias.get(laberinto.inicio, -1)),
+		"pasos": distancia_meta,
 	}
 
 
