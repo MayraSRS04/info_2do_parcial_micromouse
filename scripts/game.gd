@@ -37,6 +37,11 @@ var corrida_en_curso : bool = true
 @onready var raton: Raton = $raton
 @onready var paso_timer: Timer = $paso_timer
 
+# SONIDO
+var sonido_paso: AudioStreamPlayer
+var sonido_choque: AudioStreamPlayer
+var sonido_meta: AudioStreamPlayer
+
 # === ESTADO DE LA CORRIDA (B3) ===
 # Contrato sugerido para comunicarte con el HUD (hud.gd) sin acoplarlos:
 #   signal pasos_cambiados(pasos: int)
@@ -85,7 +90,33 @@ func _ready() -> void:
 			ORIGEN,
 			tam_celda
 		)
+	_preparar_sonidos()
+	raton.paso_terminado.connect(_on_raton_paso_terminado)
+	raton.choque.connect(_on_raton_choque)
+
 	fase_cambiada.emit("EXPLORANDO")
+
+func _preparar_sonidos() -> void:
+	sonido_paso = AudioStreamPlayer.new()
+	sonido_paso.stream = load("res://assets/sounds/paso.wav")
+	sonido_paso.volume_db = -10.0
+	add_child(sonido_paso)
+
+	sonido_choque = AudioStreamPlayer.new()
+	sonido_choque.stream = load("res://assets/sounds/choque.wav")
+	add_child(sonido_choque)
+
+	sonido_meta = AudioStreamPlayer.new()
+	sonido_meta.stream = load("res://assets/sounds/meta.wav")
+	add_child(sonido_meta)
+
+
+func _on_raton_paso_terminado() -> void:
+	sonido_paso.play()
+
+
+func _on_raton_choque() -> void:
+	sonido_choque.play()
 		
 func _process(delta: float) -> void:
 	if corrida_en_curso and not pausado:
@@ -130,6 +161,7 @@ func _sincronizar_fase() -> void:
 	if fase_cerebro == CerebroEstudiante.Fase.FIN and corrida_en_curso:
 		corrida_en_curso = false
 		paso_timer.stop()
+		sonido_meta.play()
 		corrida_terminada.emit(true, cerebro.pasos_exploracion, cerebro.pasos_speed)
 
 	# TODO (PARCIAL · B3): esto debe ser una máquina de estados explícita
