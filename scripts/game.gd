@@ -23,20 +23,14 @@ var cerebro = null
 signal pasos_cambiados(pasos: int)
 signal visitadas_cambiadas(cantidad: int)
 signal fase_cambiada(nombre: String)
-signal corrida_terminada(exito: bool, pasos: int)
+signal corrida_terminada(exito: bool, pasos_exploracion: int, pasos_speed: int)
 
-enum Fase {
-	EXPLORANDO,
-	VOLVIENDO,
-	SPEED_RUN,
-	FIN
-}
-
-var fase_actual: String = "EXPLORANDO"
+var fase_actual: int = -1
 var tiempo_corrida: float = 0.0
 var pausado: bool = false
 var indice_velocidad: int = 0
 var velocidades: Array[float] = [1.0, 0.5, 0.25]
+var corrida_en_curso : bool = true
 
 @onready var vista_dios: VistaLaberinto = $vista_dios
 @onready var vista_mapa_raton: VistaLaberinto = $vista_mapa_raton
@@ -91,6 +85,11 @@ func _ready() -> void:
 			ORIGEN,
 			tam_celda
 		)
+		fase_cambiada.emit("EXPLORANDO")
+		
+func _process(delta: float) -> void:
+	if corrida_en_curso and not pausado:
+		tiempo_corrida += delta
 	# La vista derecha ("mapa del ratón") queda vacía hasta que la conectes:
 	# TODO (PARCIAL · M2): configura vista_mapa_raton con el laberinto que TU
 	# cerebro descubre (Laberinto.vacio + poner_pared al sensar) y redibuja
@@ -100,30 +99,35 @@ func _ready() -> void:
 func _on_paso_timer_timeout() -> void:
 	if raton.ocupado():
 		return
-
 	cerebro.paso(raton)
-
 	pasos_cambiados.emit(raton.pasos)
 
 	if cerebro is CerebroEstudiante:
-		var visitadas_cantidad: int = cerebro.visitadas.size()
-
-		visitadas_cambiadas.emit(visitadas_cantidad)
-
+		visitadas_cambiadas.emit(cerebro.visitadas_cantidad.size())
 		vista_mapa_raton.configurar(
 			cerebro.mapa_descubierto,
 			ORIGEN,
 			tam_celda
 		)
+		_sincronizar_fase()
 
-	if laberinto.es_meta(raton.celda):
-		_meta_alcanzada()
+func _sincronizar_fase() -> void:
+	var fase_cerebro: int = cerebro.fase
+	if fase_cerebro != fase_actual:
+		fase_actual = fase_cerebro
+		var nombres := {
+			CerebroEstudiante.Fase.EXPLORANDO: "EXPLORANDO",
+			CerebroEstudiante.Fase.VOLVIENDO: "VOLVIENDO",
+			CerebroEstudiante.Fase.SPEED_RUN: "SPEED RUN",
+			CerebroEstudiante.Fase.FIN: "FIN",
+		}
+		fase_cambiada.emit(nombres.get(fase_cerebro, ""))
 	
+	if fase_cerebro == CerebroEstudiante.Fase.FIN and corrida_en_curso:
+		corrida_en_curso = false
+		paso_timer.stop()
+		corrida_terminada.emit(true, cerebro.pasos_exploracion, cerebro.pasos_speed)
 
-
-func _meta_alcanzada() -> void:
-	paso_timer.stop()
-	print("¡Meta alcanzada en ", raton.pasos, " pasos!")
 	# TODO (PARCIAL · B3): esto debe ser una máquina de estados explícita
 	# (EXPLORANDO → META → VOLVIENDO → SPEED_RUN → FIN), con pantalla final
 	# (pasos de exploración vs. pasos del speed run) y opción de reiniciar.
