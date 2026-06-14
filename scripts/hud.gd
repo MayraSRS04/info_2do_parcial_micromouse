@@ -14,12 +14,15 @@ extends PanelContainer
 
 var juego = null
 
+
 func _ready() -> void:
 	juego = get_parent().get_parent()
 	juego.pasos_cambiados.connect(update_pasos)
 	juego.visitadas_cambiadas.connect(update_visitadas)
 	juego.fase_cambiada.connect(update_fase)
 	juego.corrida_terminada.connect(_mostrar_pantalla_final)
+	juego.record_actualizado.connect(update_record)
+	_crear_selector_laberintos()
 	
 func _process(_delta: float) -> void:
 	if juego != null:
@@ -57,7 +60,32 @@ func update_record(pasos: int) -> void:
 	else:
 		record_label.text = "récord: %d pasos" % pasos
 		
+func _crear_selector_laberintos() -> void:
+	var columna: VBoxContainer = $margen/columna
+	var rutas: Array[String] = juego.listar_laberintos()
+	if rutas.is_empty():
+		return
+
+	var selector := OptionButton.new()
+	for ruta in rutas:
+		selector.add_item(ruta.get_file().get_basename())
+
+	var actual: String = juego.laberinto_seleccionado
+	if actual == "":
+		actual = juego.archivo_laberinto
+	var indice_actual: int = rutas.find(actual)
+	if indice_actual != -1:
+		selector.select(indice_actual)
+
+	selector.item_selected.connect(func(indice: int):
+		juego.cambiar_laberinto(rutas[indice])
+	)
+
+	columna.add_child(selector)
+
+
 func _mostrar_pantalla_final(exito: bool, pasos_exploracion: int, pasos_speed: int) -> void:
+	
 	var capa: CanvasLayer = get_parent()
 
 	var fondo := ColorRect.new()

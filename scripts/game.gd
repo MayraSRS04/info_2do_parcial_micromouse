@@ -13,6 +13,7 @@ extends Node2D
 @export var usar_cerebro_estudiante: bool = true
 
 const ORIGEN := Vector2(28, 44)
+const RUTA_RECORDS := "user://records.cfg"
 # La vista de dios dispone de ~608 px; la celda se adapta al tamaño del
 # laberinto (38 px en los 16x16, más grande en los de entrenamiento).
 var tam_celda := 38.0
@@ -24,7 +25,9 @@ signal pasos_cambiados(pasos: int)
 signal visitadas_cambiadas(cantidad: int)
 signal fase_cambiada(nombre: String)
 signal corrida_terminada(exito: bool, pasos_exploracion: int, pasos_speed: int)
+signal record_actualizado(pasos: int)
 
+static var laberinto_seleccionado: String = ""
 var fase_actual: int = -1
 var tiempo_corrida: float = 0.0
 var pausado: bool = false
@@ -53,6 +56,10 @@ var sonido_meta: AudioStreamPlayer
 
 
 func _ready() -> void:
+	if laberinto_seleccionado == "":
+		laberinto_seleccionado = archivo_laberinto
+	archivo_laberinto = laberinto_seleccionado
+
 	laberinto = Laberinto.desde_archivo(archivo_laberinto)
 
 	tam_celda = minf(
@@ -95,6 +102,7 @@ func _ready() -> void:
 	raton.choque.connect(_on_raton_choque)
 
 	fase_cambiada.emit("EXPLORANDO")
+	record_actualizado.emit(_cargar_record())
 
 func _preparar_sonidos() -> void:
 	sonido_paso = AudioStreamPlayer.new()
@@ -162,6 +170,8 @@ func _sincronizar_fase() -> void:
 		corrida_en_curso = false
 		paso_timer.stop()
 		sonido_meta.play()
+		var mejor: int = _guardar_record_si_mejora(cerebro.pasos_speed)
+		record_actualizado.emit(mejor)
 		corrida_terminada.emit(true, cerebro.pasos_exploracion, cerebro.pasos_speed)
 
 	# TODO (PARCIAL · B3): esto debe ser una máquina de estados explícita
@@ -206,4 +216,44 @@ func _on_boton_velocidad_pressed() -> void:
 func _on_boton_reiniciar_pressed() -> void:
 	# TODO (PARCIAL · B2): reinicia la corrida completa: ratón al inicio,
 	# cerebro nuevo, contadores a cero, timer corriendo.
+	get_tree().reload_current_scene()
+
+func _clave_record() -> String:
+	return archivo_laberinto.get_file()
+	
+func _cargar_record() -> int:
+	var config := ConfigFile.new()
+	if config.load(RUTA_RECORDS) != OK:
+		return -1
+	return int(config.get_value("records", _clave_record(), -1))
+
+
+func _guardar_record_si_mejora(pasos_speed: int) -> int:
+	var config := ConfigFile.new()
+	config.load(RUTA_RECORDS)
+	var actual: int = int(config.get_value("records", _clave_record(), -1))
+	if actual == -1 or pasos_speed < actual:
+		config.set_value("records", _clave_record(), pasos_speed)
+		config.save(RUTA_RECORDS)
+		return pasos_speed
+	return actual
+
+
+func listar_laberintos() -> Array[String]:
+	var rutas: Array[String] = []
+	var dir := DirAccess.open("res://mazes")
+	if dir:
+		dir.list_dir_begin()
+		var nombre := dir.get_next()
+		while nombre != "":
+			if not dir.current_is_dir() and nombre.ends_with(".maz"):
+				rutas.append("res://mazes/" + nombre)
+			nombre = dir.get_next()
+		dir.list_dir_end()
+	rutas.sort()
+	return rutas
+
+
+func cambiar_laberinto(ruta: String) -> void:
+	laberinto_seleccionado = ruta
 	get_tree().reload_current_scene()
