@@ -24,7 +24,7 @@ var cerebro = null
 signal pasos_cambiados(pasos: int)
 signal visitadas_cambiadas(cantidad: int)
 signal fase_cambiada(nombre: String)
-signal corrida_terminada(exito: bool, pasos_exploracion: int, pasos_speed: int)
+signal corrida_terminada(exito: bool, pasos_exploracion: int, pasos_speed: int, pasos_optimo: int)
 signal record_actualizado(pasos: int)
 
 static var laberinto_seleccionado: String = ""
@@ -177,7 +177,9 @@ func _sincronizar_fase() -> void:
 		sonido_meta.play()
 		var mejor: int = _guardar_record_si_mejora(cerebro.pasos_speed)
 		record_actualizado.emit(mejor)
-		corrida_terminada.emit(true, cerebro.pasos_exploracion, cerebro.pasos_speed)
+		var optimo := _calcular_optimo_real()
+		await _animar_ruta_optima(optimo["anillos"], optimo["ruta"])
+		corrida_terminada.emit(true, cerebro.pasos_exploracion, cerebro.pasos_speed, optimo["pasos"])
 
 	# TODO (PARCIAL · B3): esto debe ser una máquina de estados explícita
 	# (EXPLORANDO → META → VOLVIENDO → SPEED_RUN → FIN), con pantalla final
@@ -262,3 +264,68 @@ func listar_laberintos() -> Array[String]:
 func cambiar_laberinto(ruta: String) -> void:
 	laberinto_seleccionado = ruta
 	get_tree().reload_current_scene()
+
+
+func _calcular_optimo_real() -> Dictionary:
+	var distancias: Dictionary = {}
+	var anillos: Array = []
+	var cola: Array[Vector2i] = []
+
+	for meta in laberinto.metas:
+		distancias[meta] = 0
+		cola.append(meta)
+	anillos.append(cola.duplicate())
+
+	var indice := 0
+	while indice < cola.size():
+		var tope := cola.size()
+		var siguiente_anillo: Array[Vector2i] = []
+		while indice < tope:
+			var celda: Vector2i = cola[indice]
+			indice += 1
+			for dir in range(4):
+				if laberinto.tiene_pared(celda, dir):
+					continue
+				var vecina: Vector2i = celda + Laberinto.DELTAS[dir]
+				if not laberinto.en_rango(vecina) or distancias.has(vecina):
+					continue
+				distancias[vecina] = int(distancias[celda]) + 1
+				siguiente_anillo.append(vecina)
+				cola.append(vecina)
+		if not siguiente_anillo.is_empty():
+			anillos.append(siguiente_anillo)
+
+	var ruta: Array[Vector2i] = [laberinto.inicio]
+	var actual: Vector2i = laberinto.inicio
+	while not laberinto.es_meta(actual):
+		var mejor: Vector2i = actual
+		var mejor_dist: int = int(distancias.get(actual, 999999))
+		for dir in range(4):
+			if laberinto.tiene_pared(actual, dir):
+				continue
+			var vecina: Vector2i = actual + Laberinto.DELTAS[dir]
+			if distancias.has(vecina) and int(distancias[vecina]) < mejor_dist:
+				mejor_dist = int(distancias[vecina])
+				mejor = vecina
+		if mejor == actual:
+			break
+		ruta.append(mejor)
+		actual = mejor
+
+	return {
+		"anillos": anillos,
+		"ruta": ruta,
+		"pasos": int(distancias.get(laberinto.inicio, -1)),
+	}
+
+
+func _animar_ruta_optima(anillos: Array, ruta: Array[Vector2i]) -> void:
+	vista_dios.color_visitada = Color(0.35, 0.65, 0.95, 0.22)
+	var reveladas: Array[Vector2i] = []
+	for anillo in anillos:
+		for celda in anillo:
+			reveladas.append(celda)
+		vista_dios.actualizar_progreso(reveladas, [], [])
+		await get_tree().create_timer(0.04).timeout
+	vista_dios.color_ruta_speed = Color(0.95, 0.85, 0.25, 0.95)
+	vista_dios.actualizar_progreso(reveladas, [], ruta)

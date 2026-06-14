@@ -84,7 +84,7 @@ func _crear_selector_laberintos() -> void:
 	columna.add_child(selector)
 
 
-func _mostrar_pantalla_final(exito: bool, pasos_exploracion: int, pasos_speed: int) -> void:
+func _mostrar_pantalla_final(exito: bool, pasos_exploracion: int, pasos_speed: int, pasos_optimo: int) -> void:
 	
 	var capa: CanvasLayer = get_parent()
 
@@ -131,6 +131,13 @@ func _mostrar_pantalla_final(exito: bool, pasos_exploracion: int, pasos_speed: i
 	var resumen_ahorro := Label.new()
 	resumen_ahorro.text = "Ahorro: %d pasos" % ahorro
 	columna.add_child(resumen_ahorro)
+
+	var resumen_optimo := Label.new()
+	if pasos_optimo >= 0:
+		resumen_optimo.text = "Óptimo real: %d pasos" % pasos_optimo
+	else:
+		resumen_optimo.text = "Óptimo real: —"
+	columna.add_child(resumen_optimo)
 
 	var boton_reiniciar := Button.new()
 	boton_reiniciar.text = "Reiniciar"
