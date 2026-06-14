@@ -85,7 +85,7 @@ func _ready() -> void:
 			ORIGEN,
 			tam_celda
 		)
-		fase_cambiada.emit("EXPLORANDO")
+	fase_cambiada.emit("EXPLORANDO")
 		
 func _process(delta: float) -> void:
 	if corrida_en_curso and not pausado:
@@ -103,7 +103,7 @@ func _on_paso_timer_timeout() -> void:
 	pasos_cambiados.emit(raton.pasos)
 
 	if cerebro is CerebroEstudiante:
-		visitadas_cambiadas.emit(cerebro.visitadas_cantidad.size())
+		visitadas_cambiadas.emit(cerebro.visitadas.size())
 		vista_mapa_raton.configurar(
 			cerebro.mapa_descubierto,
 			ORIGEN,
