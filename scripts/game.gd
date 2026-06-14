@@ -125,6 +125,11 @@ func _on_raton_paso_terminado() -> void:
 
 func _on_raton_choque() -> void:
 	sonido_choque.play()
+	var tween := create_tween()
+	tween.tween_property(raton, "modulate", Color(1.0, 0.35, 0.35), 0.05)
+	tween.parallel().tween_property(raton, "scale", Vector2(1.3, 1.3), 0.05)
+	tween.tween_property(raton, "modulate", Color(1, 1, 1), 0.15)
+	tween.parallel().tween_property(raton, "scale", Vector2(1, 1), 0.15)
 		
 func _process(delta: float) -> void:
 	if corrida_en_curso and not pausado:
