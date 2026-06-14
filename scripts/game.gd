@@ -8,7 +8,7 @@ extends Node2D
 # Laberintos incluidos: 01_entrenamiento (8x8, perfecto: el wall-follower lo
 # resuelve), 02_clasico y 03_clasico (16x16 con ciclos y meta central, estilo
 # competencia: el wall-follower NO basta).
-@export_file("*.maz") var archivo_laberinto: String = "res://mazes/01_entrenamiento.maz"
+@export_file("*.maz") var archivo_laberinto: String = "res://mazes/03_clasico.maz"
 # Marca esta casilla (en el Inspector del nodo Game) para usar tu cerebro.
 @export var usar_cerebro_estudiante: bool = true
 
@@ -104,10 +104,14 @@ func _on_paso_timer_timeout() -> void:
 
 	if cerebro is CerebroEstudiante:
 		visitadas_cambiadas.emit(cerebro.visitadas.size())
-		vista_mapa_raton.configurar(
-			cerebro.mapa_descubierto,
-			ORIGEN,
-			tam_celda
+		vista_mapa_raton.configurar(cerebro.mapa_descubierto, ORIGEN, tam_celda)
+		var celdas_visitadas: Array[Vector2i] = []
+		for celda in cerebro.visitadas.keys():
+			celdas_visitadas.append(celda)
+		vista_mapa_raton.actualizar_progreso(
+			celdas_visitadas,
+			cerebro.ruta_exploracion,
+			cerebro.ruta_speed
 		)
 		_sincronizar_fase()
 
